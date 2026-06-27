@@ -1,0 +1,71 @@
+groups:
+- name: lab_alerts
+  rules:
+  # 1. High CPU Usage
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU Usage"
+      description: "CPU rata-rata > 80% selama 2 menit di instance {{ $labels.instance }}."
+
+  # 2. High Memory Usage
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High Memory Usage"
+      description: "RAM usage > 85% selama 2 menit di instance {{ $labels.instance }}."
+
+  # 3. Disk Space Low
+  - alert: DiskSpaceLow
+    expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"}) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Disk Space Low"
+      description: "Disk root > 80% selama 5 menit di instance {{ $labels.instance }}."
+
+  # 4. Container High Memory
+  - alert: ContainerHighMemory
+    expr: container_memory_usage_bytes{name!=""} > 536870912
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container High Memory"
+      description: "Container {{ $labels.name }} memakai RAM > 512MB."
+
+  # 5. Container Not Running
+  - alert: ContainerNotRunning
+    expr: time() - container_last_seen{name!=""} > 60
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container Not Running"
+      description: "Container {{ $labels.name }} hilang lebih dari 60 detik."
+
+  # 6. High Load Average (Aturan Tambahan 1)
+  - alert: HighLoadAverage
+    expr: node_load1 > 2
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU Load Average"
+      description: "Load average 1 menit terakhir melebihi 2 pada instance {{ $labels.instance }}."
+
+  # 7. High Network Traffic (Aturan Tambahan 2)
+  - alert: HighNetworkTraffic
+    expr: rate(node_network_receive_bytes_total[2m]) / 1024 / 1024 > 50
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Network Traffic Detected"
+      description: "Trafik jaringan (masuk) di atas 50 MB/s pada instance {{ $labels.instance }}."
